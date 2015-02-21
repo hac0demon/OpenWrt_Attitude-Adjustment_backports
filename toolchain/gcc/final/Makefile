@@ -4,6 +4,7 @@ include ../common.mk
 
 GCC_CONFIGURE += \
 	--with-headers=$(TOOLCHAIN_DIR)/include \
+	--disable-libsanitizer \
 	--enable-languages=$(TARGET_LANGUAGES) \
 	--enable-shared \
 	--enable-threads \
@@ -13,14 +14,6 @@ ifneq ($(CONFIG_GCC_VERSION_4_5)$(CONFIG_GCC_VERSION_4_6),)
   GCC_CONFIGURE += \
 	--enable-lto \
 	--with-libelf=$(TOPDIR)/staging_dir/host
-endif
-
-ifneq ($(CONFIG_TLS_SUPPORT),)
-  GCC_CONFIGURE += \
-	--enable-tls
-else
-  GCC_CONFIGURE += \
-	--disable-tls
 endif
 
 ifneq ($(CONFIG_SJLJ_EXCEPTIONS),)
@@ -35,7 +28,7 @@ define CleanupToolchain
 	ln -sf ../include $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
 	rm -rf $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib
 	ln -sf ../lib $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib
-	$(if $(CONFIG_mips64)$(CONFIG_mips64el)$(CONFIG_x86_64),ln -sf ../lib64 $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib64)
+	$(if $(CONFIG_ARCH_64BIT),ln -sf ../lib64 $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib64)
 endef
 
 define Host/Configure
@@ -77,6 +70,7 @@ define Host/Install
 		done; \
 	);
 	$(if $(CONFIG_EXTRA_TARGET_ARCH),$(call SetupExtraArch))
+	$(RM) $(TOOLCHAIN_DIR)/lib/libiberty.a
 	$(SCRIPT_DIR)/patch-specs.sh "$(TOOLCHAIN_DIR)"
 endef
 
